@@ -247,9 +247,9 @@ export function PatientDialog({
       <Dialog open onOpenChange={(o) => !o && onClose()}>
         <DialogContent
           showCloseButton={false}
-          className="max-h-[90vh] gap-0 overflow-hidden p-0 sm:max-w-3xl"
+          className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl"
         >
-          <DialogHeader className="flex-row items-center gap-3 space-y-0 border-b p-4">
+          <DialogHeader className="flex-row items-center gap-3 space-y-0 border-b p-4 shrink-0">
             <Avatar className="size-11">
               <AvatarFallback className="bg-primary text-primary-foreground">
                 {patient.name[0]}
@@ -264,8 +264,8 @@ export function PatientDialog({
             </Button>
           </DialogHeader>
 
-          <Tabs defaultValue="profile" className="flex min-h-0 flex-col">
-            <TabsList className="w-full justify-start rounded-none border-b bg-transparent px-4">
+          <Tabs defaultValue="profile" className="flex min-h-0 flex-1 flex-col">
+            <TabsList className="w-full shrink-0 justify-start rounded-none border-b bg-transparent px-4">
               <TabsTrigger value="profile">Perfil</TabsTrigger>
               <TabsTrigger value="clinical">Expediente clínico</TabsTrigger>
               <TabsTrigger value="content">Contenido</TabsTrigger>

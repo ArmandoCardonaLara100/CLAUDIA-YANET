@@ -41,6 +41,24 @@ export type UploadDTO = {
   createdAt: string;
 };
 
+export type ReviewDTO = {
+  id: number;
+  patientId: number;
+  rating: number;
+  comment: string;
+  displayName: string;
+  approved: boolean;
+  createdAt: string;
+};
+
+/** "Armando Cardona" -> "Armando C." — protects patient privacy on the public page. */
+export function anonymizeName(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "Paciente";
+  if (parts.length === 1) return parts[0];
+  return `${parts[0]} ${parts[1][0].toUpperCase()}.`;
+}
+
 export type EmergencyContact = {
   nombre: string;
   parentesco: string;

@@ -41,6 +41,16 @@ export type RawClinical = {
   updated_at: string;
 };
 
+export type RawReview = {
+  id: number;
+  patient_id: number;
+  rating: number;
+  comment: string;
+  display_name: string;
+  approved: boolean;
+  created_at: string;
+};
+
 type Handlers<T> = {
   onInsert?: (row: T) => void;
   onUpdate?: (row: T) => void;

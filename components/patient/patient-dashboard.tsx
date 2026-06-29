@@ -8,6 +8,7 @@ import {
   FileText,
   Link2,
   Loader2,
+  MessageSquareHeart,
   Sparkles,
   Trash2,
   Upload,
@@ -21,6 +22,7 @@ import {
   registerPatientUpload,
 } from "@/app/actions/uploads";
 import { getContentFileUrl } from "@/app/actions/content";
+import { submitReview } from "@/app/actions/reviews";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
 import {
   useRealtime,
@@ -28,7 +30,7 @@ import {
   type RawUpload,
 } from "@/hooks/use-realtime";
 import { formatDate, formatLongDate } from "@/lib/format";
-import type { ContentDTO, UploadDTO } from "@/lib/types";
+import type { ContentDTO, ReviewDTO, UploadDTO } from "@/lib/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,15 +44,19 @@ import {
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
+import { StarRating, StarRatingInput } from "@/components/ui/star-rating";
 
 export function PatientDashboard({
   userId,
   initialContent,
   initialUploads,
+  initialReview,
 }: {
   userId: number;
   initialContent: ContentDTO[];
   initialUploads: UploadDTO[];
+  initialReview: ReviewDTO | null;
 }) {
   const [content, setContent] = useState<ContentDTO[]>(initialContent);
   const [myUploads, setMyUploads] = useState<UploadDTO[]>(initialUploads);
@@ -255,6 +261,9 @@ export function PatientDashboard({
         </CardContent>
       </Card>
 
+      {/* ── My review ── */}
+      <ReviewCard initialReview={initialReview} />
+
       {/* ── Therapist material ── */}
       <div className="mb-4 flex items-center gap-2">
         <h2 className="text-lg font-semibold">Material de Claudia</h2>
@@ -363,6 +372,80 @@ function ContentCard({ item, isNew }: { item: ContentDTO; isNew: boolean }) {
           <Loader2 className="text-muted-foreground size-4 shrink-0 animate-spin" />
         ) : (
           <ExternalLink className="text-muted-foreground size-4 shrink-0" />
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ReviewCard({ initialReview }: { initialReview: ReviewDTO | null }) {
+  const [review, setReview] = useState<ReviewDTO | null>(initialReview);
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit() {
+    setSubmitting(true);
+    const res = await submitReview({ rating, comment });
+    setSubmitting(false);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
+    setReview(res.data);
+    toast.success("¡Gracias por tu reseña!");
+  }
+
+  return (
+    <Card className="mb-8 border-[rgba(61,139,110,0.15)] shadow-none">
+      <CardContent className="p-5 sm:p-6">
+        <div className="mb-4 flex items-center gap-2">
+          <MessageSquareHeart className="text-primary size-5" />
+          <span className="font-semibold">Mi reseña</span>
+        </div>
+
+        {review ? (
+          <div>
+            <StarRating value={review.rating} />
+            <p className="text-foreground mt-3 text-sm leading-relaxed">
+              “{review.comment}”
+            </p>
+            <Badge
+              className={`mt-4 ${
+                review.approved
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {review.approved
+                ? "Publicada en la página principal"
+                : "Pendiente de aprobación"}
+            </Badge>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-muted-foreground text-sm">
+              Comparte tu experiencia con Claudia. Tu reseña se mostrará de
+              forma anónima en la página principal una vez aprobada.
+            </p>
+            <StarRatingInput value={rating} onChange={setRating} />
+            <Textarea
+              rows={3}
+              placeholder="Cuenta brevemente tu experiencia..."
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+            />
+            <Button
+              onClick={handleSubmit}
+              disabled={submitting || rating === 0 || comment.trim().length < 10}
+            >
+              {submitting ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                "Enviar reseña"
+              )}
+            </Button>
+          </div>
         )}
       </CardContent>
     </Card>

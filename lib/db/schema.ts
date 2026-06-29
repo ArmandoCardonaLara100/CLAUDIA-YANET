@@ -1,4 +1,5 @@
 import {
+  boolean,
   integer,
   jsonb,
   pgEnum,
@@ -73,6 +74,25 @@ export const patientUploads = pgTable("patient_uploads", {
     .defaultNow(),
 });
 
+// One review per patient (enforced by `.unique()`), permanent once submitted
+// (no edit), gated behind admin approval before showing on the public landing page.
+export const reviews = pgTable("reviews", {
+  id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
+  patientId: integer("patient_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" })
+    .unique(),
+  rating: integer("rating").notNull(),
+  comment: text("comment").notNull(),
+  // Snapshot of an anonymized display name (e.g. "Armando C.") so it stays
+  // stable even if the patient's account is later renamed or removed.
+  displayName: text("display_name").notNull(),
+  approved: boolean("approved").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export const usersRelations = relations(users, ({ one, many }) => ({
   clinicalRecord: one(clinicalRecords, {
     fields: [users.id],
@@ -80,6 +100,10 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   }),
   content: many(content),
   uploads: many(patientUploads),
+  review: one(reviews, {
+    fields: [users.id],
+    references: [reviews.patientId],
+  }),
 }));
 
 export const clinicalRecordsRelations = relations(
@@ -106,9 +130,17 @@ export const patientUploadsRelations = relations(patientUploads, ({ one }) => ({
   }),
 }));
 
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  patient: one(users, {
+    fields: [reviews.patientId],
+    references: [users.id],
+  }),
+}));
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Content = typeof content.$inferSelect;
 export type PatientUpload = typeof patientUploads.$inferSelect;
 export type ClinicalRecord = typeof clinicalRecords.$inferSelect;
+export type Review = typeof reviews.$inferSelect;
 export type { ContentType };

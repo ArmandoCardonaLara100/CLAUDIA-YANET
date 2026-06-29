@@ -1,6 +1,6 @@
 import { Heart } from "lucide-react";
 import { requirePatient, sessionUserId } from "@/lib/dal";
-import { getContentForPatient, getMyUploads } from "@/lib/queries";
+import { getContentForPatient, getMyReview, getMyUploads } from "@/lib/queries";
 import { PatientDashboard } from "@/components/patient/patient-dashboard";
 
 export const dynamic = "force-dynamic";
@@ -10,9 +10,10 @@ export default async function PatientPage() {
   const userId = sessionUserId(session);
   const name = session.user.name ?? "";
 
-  const [content, uploads] = await Promise.all([
+  const [content, uploads, review] = await Promise.all([
     getContentForPatient(userId),
     getMyUploads(userId),
+    getMyReview(userId),
   ]);
 
   return (
@@ -44,6 +45,7 @@ export default async function PatientPage() {
           userId={userId}
           initialContent={content}
           initialUploads={uploads}
+          initialReview={review}
         />
       </div>
     </div>

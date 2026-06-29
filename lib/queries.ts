@@ -1,9 +1,15 @@
 import "server-only";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { clinicalRecords, content, patientUploads, users } from "@/lib/db/schema";
+import {
+  clinicalRecords,
+  content,
+  patientUploads,
+  reviews,
+  users,
+} from "@/lib/db/schema";
 import { parseClinical } from "@/lib/types";
-import type { ContentDTO, PatientDTO, UploadDTO } from "@/lib/types";
+import type { ContentDTO, PatientDTO, ReviewDTO, UploadDTO } from "@/lib/types";
 
 const iso = (d: Date) => d.toISOString();
 
@@ -157,4 +163,40 @@ export async function patientOwnsContent(patientId: number, contentId: number) {
     columns: { id: true },
   });
   return Boolean(row);
+}
+
+const toReviewDTO = (r: typeof reviews.$inferSelect): ReviewDTO => ({
+  id: r.id,
+  patientId: r.patientId,
+  rating: r.rating,
+  comment: r.comment,
+  displayName: r.displayName,
+  approved: r.approved,
+  createdAt: iso(r.createdAt),
+});
+
+/** Approved reviews for the public landing page, newest first. */
+export async function getApprovedReviews(): Promise<ReviewDTO[]> {
+  const rows = await db
+    .select()
+    .from(reviews)
+    .where(eq(reviews.approved, true))
+    .orderBy(desc(reviews.createdAt));
+  return rows.map(toReviewDTO);
+}
+
+/** All reviews (admin moderation view), pending first, newest first within each group. */
+export async function getAllReviews(): Promise<ReviewDTO[]> {
+  const rows = await db.select().from(reviews).orderBy(desc(reviews.createdAt));
+  return rows
+    .map(toReviewDTO)
+    .sort((a, b) => Number(a.approved) - Number(b.approved));
+}
+
+/** The current patient's own review, if they've submitted one. */
+export async function getMyReview(patientId: number): Promise<ReviewDTO | null> {
+  const row = await db.query.reviews.findFirst({
+    where: eq(reviews.patientId, patientId),
+  });
+  return row ? toReviewDTO(row) : null;
 }

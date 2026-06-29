@@ -19,6 +19,8 @@ import {
   Wind,
 } from "lucide-react";
 import { SiteHeader } from "@/components/landing/site-header";
+import { ReviewsSection } from "@/components/landing/reviews-section";
+import { getApprovedReviews } from "@/lib/queries";
 
 const WA =
   "https://wa.me/524771576945?text=Hola%20Claudia%2C%20me%20gustar%C3%ADa%20agendar%20una%20consulta.";
@@ -128,7 +130,10 @@ const CHIPS = [
   "Sesiones Presenciales",
 ];
 
-export default function LandingPage() {
+export const dynamic = "force-dynamic";
+
+export default async function LandingPage() {
+  const reviews = await getApprovedReviews();
   return (
     <div id="top" className="bg-background scroll-smooth">
       <SiteHeader />
@@ -372,6 +377,10 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      <Divider />
+
+      <ReviewsSection reviews={reviews} />
 
       <Divider />
 

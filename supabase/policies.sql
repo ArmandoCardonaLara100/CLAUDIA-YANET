@@ -21,6 +21,7 @@ alter table public.users             enable row level security;
 alter table public.clinical_records  enable row level security;
 alter table public.content           enable row level security;
 alter table public.patient_uploads   enable row level security;
+alter table public.reviews           enable row level security;
 
 -- 3. SELECT policies (admin sees all; patients see only their own rows) ------
 -- Realtime delivers Postgres changes through these SELECT policies.
@@ -57,11 +58,20 @@ create policy rt_uploads_select on public.patient_uploads
     or patient_id::text = (auth.jwt() ->> 'sub')
   );
 
+drop policy if exists rt_reviews_select on public.reviews;
+create policy rt_reviews_select on public.reviews
+  for select to authenticated
+  using (
+    (auth.jwt() ->> 'user_role') = 'admin'
+    or patient_id::text = (auth.jwt() ->> 'sub')
+  );
+
 -- 4. Full replica identity so DELETE payloads include all columns -----------
 alter table public.users            replica identity full;
 alter table public.clinical_records replica identity full;
 alter table public.content          replica identity full;
 alter table public.patient_uploads  replica identity full;
+alter table public.reviews          replica identity full;
 
 -- 5. Add tables to the realtime publication ---------------------------------
 do $$
@@ -79,4 +89,8 @@ exception when duplicate_object then null; end $$;
 do $$
 begin
   alter publication supabase_realtime add table public.patient_uploads;
+exception when duplicate_object then null; end $$;
+do $$
+begin
+  alter publication supabase_realtime add table public.reviews;
 exception when duplicate_object then null; end $$;

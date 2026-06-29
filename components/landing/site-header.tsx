@@ -8,6 +8,7 @@ const LINKS = [
   ["#about", "Sobre mí"],
   ["#specialties", "Especialidades"],
   ["#education", "Formación"],
+  ["#reviews", "Reseñas"],
   ["#location", "Ubicación"],
   ["#contact", "Contacto"],
 ] as const;

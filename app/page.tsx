@@ -407,7 +407,7 @@ export default function LandingPage() {
                 icon={<CalendarHeart className="size-5" />}
                 title="Horario de atención"
               >
-                Lunes a Viernes: 9:00 – 19:00 h
+                Lunes a Viernes: 9:00 – 19:00 h. CON PREVIA CITA.
               </LocationItem>
               <LocationItem icon={<Train className="size-5" />} title="Cómo llegar">
                 Blvd Delta, frente a Centro de Gobierno.

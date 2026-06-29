@@ -62,6 +62,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 
 export function PatientDialog({
   patient,
@@ -84,6 +85,11 @@ export function PatientDialog({
   const [showPassword, setShowPassword] = useState(false);
   const [clinical, setClinical] = useState<ClinicalData>(() =>
     parseClinical(patient.clinical),
+  );
+  // Stable, client-only keys for each session row so their (uncontrolled) rich
+  // text editors keep their identity when sessions are added/removed. Not saved.
+  const [sessionIds, setSessionIds] = useState<string[]>(() =>
+    parseClinical(patient.clinical).sesiones.map(() => crypto.randomUUID()),
   );
   const [content, setContent] = useState<ContentDTO[]>([]);
   const [uploadType, setUploadType] = useState<ContentType>("file");
@@ -509,66 +515,73 @@ export function PatientDialog({
                   )}
                   {sessions.map((s, index) => (
                     <div
-                      key={index}
-                      className="border-primary/10 bg-primary/5 flex items-start gap-3 rounded-lg border p-3"
+                      key={sessionIds[index] ?? index}
+                      className="border-primary/10 bg-primary/5 space-y-3 rounded-lg border p-3"
                     >
-                      <div className="bg-primary/20 text-primary mt-1 flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold">
-                        {index + 1}
-                      </div>
-                      <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-3">
-                        <LabeledInput
-                          label="Fecha"
-                          type="date"
-                          value={s.fecha}
-                          onChange={(v) =>
-                            setClinical((c) => ({
-                              ...c,
-                              sesiones: c.sesiones.map((x, i) =>
-                                i === index ? { ...x, fecha: v } : x,
-                              ),
-                            }))
-                          }
-                        />
-                        <div className="sm:col-span-2">
-                          <LabeledTextarea
-                            label="Nota de sesión"
-                            rows={1}
-                            value={s.nota}
-                            onChange={(v) =>
+                      <div className="flex items-center gap-3">
+                        <div className="bg-primary/20 text-primary flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold">
+                          {index + 1}
+                        </div>
+                        <div className="flex-1">
+                          <Label className="sr-only">Fecha de la sesión</Label>
+                          <Input
+                            type="date"
+                            value={s.fecha}
+                            className="w-auto max-w-48"
+                            onChange={(e) =>
                               setClinical((c) => ({
                                 ...c,
                                 sesiones: c.sesiones.map((x, i) =>
-                                  i === index ? { ...x, nota: v } : x,
+                                  i === index ? { ...x, fecha: e.target.value } : x,
                                 ),
                               }))
                             }
                           />
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive"
+                          onClick={() => {
+                            setClinical((c) => ({
+                              ...c,
+                              sesiones: c.sesiones.filter((_, i) => i !== index),
+                            }));
+                            setSessionIds((ids) =>
+                              ids.filter((_, i) => i !== index),
+                            );
+                          }}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive mt-1"
-                        onClick={() =>
-                          setClinical((c) => ({
-                            ...c,
-                            sesiones: c.sesiones.filter((_, i) => i !== index),
-                          }))
-                        }
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
+                      <div>
+                        <Label className="mb-2 block">Nota de sesión</Label>
+                        <RichTextEditor
+                          initialContent={s.nota}
+                          minHeight={420}
+                          onChange={(html) =>
+                            setClinical((c) => ({
+                              ...c,
+                              sesiones: c.sesiones.map((x, i) =>
+                                i === index ? { ...x, nota: html } : x,
+                              ),
+                            }))
+                          }
+                        />
+                      </div>
                     </div>
                   ))}
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() =>
+                    onClick={() => {
                       setClinical((c) => ({
                         ...c,
                         sesiones: [...c.sesiones, { fecha: "", nota: "" }],
-                      }))
-                    }
+                      }));
+                      setSessionIds((ids) => [...ids, crypto.randomUUID()]);
+                    }}
                   >
                     <Plus className="size-4" />
                     Agregar sesión
